@@ -44,6 +44,8 @@ export default function Peminjaman() {
   const [adminAuthDialog, setAdminAuthDialog] = useState(false);
   const [pendingAdminAction, setPendingAdminAction] = useState<(() => void | Promise<void>) | null>(null);
 
+  const resolveCarName = (carId: string, fallback?: string) => fallback || cars.find((car) => car.id === carId)?.name || "";
+
   async function refreshBookings() {
     const latestBookings = await fetchBookingsFromSheet();
     setBookings(latestBookings);
@@ -75,6 +77,7 @@ export default function Peminjaman() {
       id: crypto.randomUUID(),
       ...form,
       carId: "",
+      carName: "",
       status: "pending",
       createdAt: new Date().toISOString(),
     };
@@ -101,19 +104,20 @@ export default function Peminjaman() {
       return;
     }
 
-    const success = await updateBookingStatusOnSheet(approvalDialog.bookingId, "approved", selectedCarId);
+    const selectedCarName = resolveCarName(selectedCarId);
+    const success = await updateBookingStatusOnSheet(approvalDialog.bookingId, "approved", selectedCarId, selectedCarName);
     await refreshBookings();
     setApprovalDialog({ open: false, bookingId: "" });
 
     toast(
       success
-        ? { title: "Disetujui", description: "Peminjaman telah disetujui dan diperbarui di spreadsheet" }
+        ? { title: "Disetujui", description: `Mobil ${selectedCarName} berhasil dialokasikan dan disimpan di spreadsheet` }
         : { title: "Sinkronisasi gagal", description: "Approval lokal berubah, tetapi spreadsheet gagal diperbarui", variant: "destructive" }
     );
   };
 
   const handleReject = async (id: string) => {
-    const success = await updateBookingStatusOnSheet(id, "rejected");
+    const success = await updateBookingStatusOnSheet(id, "rejected", "", "");
     await refreshBookings();
 
     toast(
@@ -123,9 +127,9 @@ export default function Peminjaman() {
     );
   };
 
-  const openEditForm = (b: Booking) => {
-    setEditForm({ borrowerName: b.borrowerName, teamName: b.teamName, keperluan: b.keperluan, startDate: b.startDate, endDate: b.endDate, startTime: b.startTime, endTime: b.endTime });
-    setEditDialog({ open: true, booking: b });
+  const openEditForm = (booking: Booking) => {
+    setEditForm({ borrowerName: booking.borrowerName, teamName: booking.teamName, keperluan: booking.keperluan, startDate: booking.startDate, endDate: booking.endDate, startTime: booking.startTime, endTime: booking.endTime });
+    setEditDialog({ open: true, booking });
   };
 
   const handleEditFormSave = async () => {
@@ -142,10 +146,10 @@ export default function Peminjaman() {
     );
   };
 
-  const openEditApproval = (b: Booking) => {
-    setEditApprovalCarId(b.carId);
-    setEditApprovalStatus(b.status);
-    setEditApprovalDialog({ open: true, booking: b });
+  const openEditApproval = (booking: Booking) => {
+    setEditApprovalCarId(booking.carId);
+    setEditApprovalStatus(booking.status);
+    setEditApprovalDialog({ open: true, booking });
   };
 
   const handleEditApprovalSave = async () => {
@@ -157,26 +161,27 @@ export default function Peminjaman() {
       return;
     }
 
-    const success = await updateBookingOnSheet(editApprovalDialog.booking.id, { status: editApprovalStatus, carId });
+    const carName = editApprovalStatus === "approved" ? resolveCarName(carId, editApprovalDialog.booking.carName) : "";
+    const success = await updateBookingOnSheet(editApprovalDialog.booking.id, { status: editApprovalStatus, carId, carName });
     await refreshBookings();
     setEditApprovalDialog({ open: false, booking: null });
 
     toast(
       success
-        ? { title: "Berhasil", description: "Status approval berhasil diperbarui di spreadsheet" }
+        ? { title: "Berhasil", description: "Status approval dan nama mobil berhasil diperbarui di spreadsheet" }
         : { title: "Sinkronisasi gagal", description: "Perubahan approval lokal tersimpan, tetapi spreadsheet gagal diperbarui", variant: "destructive" }
     );
   };
 
-  const statusIcon = (s: string) => {
-    if (s === "approved") return <CheckCircle className="w-4 h-4 text-success" />;
-    if (s === "rejected") return <XCircle className="w-4 h-4 text-destructive" />;
+  const statusIcon = (status: string) => {
+    if (status === "approved") return <CheckCircle className="w-4 h-4 text-success" />;
+    if (status === "rejected") return <XCircle className="w-4 h-4 text-destructive" />;
     return <Clock className="w-4 h-4 text-warning" />;
   };
 
-  const statusLabel = (s: string) => {
-    if (s === "approved") return "Disetujui";
-    if (s === "rejected") return "Ditolak";
+  const statusLabel = (status: string) => {
+    if (status === "approved") return "Disetujui";
+    if (status === "rejected") return "Ditolak";
     return "Menunggu";
   };
 
@@ -247,44 +252,42 @@ export default function Peminjaman() {
                 {bookings.length === 0 ? (
                   <tr><td colSpan={8} className="text-center p-8 text-muted-foreground">Belum ada data peminjaman</td></tr>
                 ) : (
-                  bookings.map((b) => {
-                    const car = cars.find((c) => c.id === b.carId);
+                  bookings.map((booking) => {
+                    const carName = resolveCarName(booking.carId, booking.carName) || "—";
                     return (
-                      <tr key={b.id} className="border-t hover:bg-muted/50 transition-colors">
-                        <td className="p-3 font-medium text-card-foreground">{b.borrowerName}</td>
-                        <td className="p-3 text-muted-foreground">{b.teamName}</td>
-                        <td className="p-3 text-muted-foreground max-w-[150px] truncate">{b.keperluan}</td>
-                        <td className="p-3 text-muted-foreground whitespace-nowrap">{b.startDate} — {b.endDate}</td>
-                        <td className="p-3 text-muted-foreground whitespace-nowrap">{b.startTime} — {b.endTime}</td>
+                      <tr key={booking.id} className="border-t hover:bg-muted/50 transition-colors">
+                        <td className="p-3 font-medium text-card-foreground">{booking.borrowerName}</td>
+                        <td className="p-3 text-muted-foreground">{booking.teamName}</td>
+                        <td className="p-3 text-muted-foreground max-w-[150px] truncate">{booking.keperluan}</td>
+                        <td className="p-3 text-muted-foreground whitespace-nowrap">{booking.startDate} — {booking.endDate}</td>
+                        <td className="p-3 text-muted-foreground whitespace-nowrap">{booking.startTime} — {booking.endTime}</td>
                         <td className="p-3 text-muted-foreground">
-                          {car ? (
-                            <span className="flex items-center gap-2">
-                              <Car className="w-4 h-4" /> {car.name}
-                            </span>
-                          ) : "—"}
+                          <span className="flex items-center gap-2">
+                            <Car className="w-4 h-4" /> {carName}
+                          </span>
                         </td>
                         <td className="p-3">
                           <span className="flex items-center gap-1.5">
-                            {statusIcon(b.status)} {statusLabel(b.status)}
+                            {statusIcon(booking.status)} {statusLabel(booking.status)}
                           </span>
                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-1">
-                            {b.status === "pending" && (
+                            {booking.status === "pending" && (
                               <>
-                                <Button size="sm" variant="outline" className="text-success border-success/30 hover:bg-success/10" onClick={() => requireAdmin(() => handleApproveClick(b.id))}>
+                                <Button size="sm" variant="outline" className="text-success border-success/30 hover:bg-success/10" onClick={() => requireAdmin(() => handleApproveClick(booking.id))}>
                                   <CheckCircle className="w-3.5 h-3.5 mr-1" /> Setujui
                                 </Button>
-                                <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => requireAdmin(() => handleReject(b.id))}>
+                                <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => requireAdmin(() => handleReject(booking.id))}>
                                   <XCircle className="w-3.5 h-3.5 mr-1" /> Tolak
                                 </Button>
                               </>
                             )}
-                            <Button size="sm" variant="ghost" onClick={() => openEditForm(b)} title="Edit data">
+                            <Button size="sm" variant="ghost" onClick={() => openEditForm(booking)} title="Edit data">
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
-                            {b.status !== "pending" && (
-                              <Button size="sm" variant="ghost" onClick={() => requireAdmin(() => openEditApproval(b))} title="Edit approval">
+                            {booking.status !== "pending" && (
+                              <Button size="sm" variant="ghost" onClick={() => requireAdmin(() => openEditApproval(booking))} title="Edit approval">
                                 <CheckCircle className="w-3.5 h-3.5" />
                               </Button>
                             )}
@@ -300,7 +303,6 @@ export default function Peminjaman() {
         </div>
       </div>
 
-      {/* Approval Dialog */}
       <Dialog open={approvalDialog.open} onOpenChange={(open) => setApprovalDialog({ ...approvalDialog, open })}>
         <DialogContent>
           <DialogHeader>
@@ -309,8 +311,8 @@ export default function Peminjaman() {
           <Select value={selectedCarId} onValueChange={setSelectedCarId}>
             <SelectTrigger><SelectValue placeholder="Pilih mobil" /></SelectTrigger>
             <SelectContent>
-              {cars.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              {cars.map((car) => (
+                <SelectItem key={car.id} value={car.id}>{car.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -321,7 +323,6 @@ export default function Peminjaman() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Form Dialog */}
       <Dialog open={editDialog.open} onOpenChange={(open) => setEditDialog({ ...editDialog, open })}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Data Peminjaman</DialogTitle></DialogHeader>
@@ -345,14 +346,13 @@ export default function Peminjaman() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Approval Dialog */}
       <Dialog open={editApprovalDialog.open} onOpenChange={(open) => setEditApprovalDialog({ ...editApprovalDialog, open })}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Status Approval</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label>Status</Label>
-              <Select value={editApprovalStatus} onValueChange={(v) => setEditApprovalStatus(v as any)}>
+              <Select value={editApprovalStatus} onValueChange={(value) => setEditApprovalStatus(value as "pending" | "approved" | "rejected")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pending">Menunggu</SelectItem>
@@ -367,8 +367,8 @@ export default function Peminjaman() {
                 <Select value={editApprovalCarId} onValueChange={setEditApprovalCarId}>
                   <SelectTrigger><SelectValue placeholder="Pilih mobil" /></SelectTrigger>
                   <SelectContent>
-                    {cars.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    {cars.map((car) => (
+                      <SelectItem key={car.id} value={car.id}>{car.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -382,7 +382,6 @@ export default function Peminjaman() {
         </DialogContent>
       </Dialog>
 
-      {/* Admin Password Dialog */}
       <AdminPasswordDialog
         open={adminAuthDialog}
         onOpenChange={(open) => { setAdminAuthDialog(open); if (!open) setPendingAdminAction(null); }}
