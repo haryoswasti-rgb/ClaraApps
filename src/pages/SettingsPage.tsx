@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Link, CheckCircle, Copy } from "lucide-react";
+import { Link, CheckCircle } from "lucide-react";
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -28,7 +28,7 @@ export default function SettingsPage() {
       } else {
         toast({ title: "Gagal", description: "Respons tidak valid dari API", variant: "destructive" });
       }
-    } catch (err) {
+    } catch {
       toast({ title: "Gagal", description: "Tidak dapat terhubung ke API. Pastikan URL benar.", variant: "destructive" });
     }
   };
@@ -76,10 +76,10 @@ export default function SettingsPage() {
         <h2 className="font-semibold text-card-foreground">Cara Setup</h2>
         <ol className="text-sm text-muted-foreground space-y-3 list-decimal list-inside">
           <li>Buat Google Spreadsheet baru dengan 2 sheet: <strong>"Kendaraan"</strong> dan <strong>"Peminjaman"</strong></li>
-          <li>Sheet <strong>Kendaraan</strong> — Header: <code className="bg-muted px-1.5 py-0.5 rounded text-xs">id | name | plate | capacity | type | active</code></li>
-          <li>Sheet <strong>Peminjaman</strong> — Header: <code className="bg-muted px-1.5 py-0.5 rounded text-xs">id | borrowerName | teamName | keperluan | startDate | endDate | startTime | endTime | carId | status | createdAt</code></li>
+          <li>Sheet <strong>Kendaraan</strong> — Header: <code className="bg-muted px-1.5 py-0.5 rounded text-xs">id | name | capacity | type | active</code></li>
+          <li>Sheet <strong>Peminjaman</strong> — Header: <code className="bg-muted px-1.5 py-0.5 rounded text-xs">id | borrowerName | teamName | keperluan | startDate | endDate | startTime | endTime | carId | carName | status | createdAt</code></li>
           <li>Buka menu <strong>Extensions → Apps Script</strong></li>
-          <li>Paste kode Apps Script yang sudah disediakan (lihat file <code className="bg-muted px-1.5 py-0.5 rounded text-xs">appscript.gs</code>)</li>
+          <li>Paste kode Apps Script terbaru untuk CLARA yang sudah mendukung kolom <strong>carName</strong></li>
           <li>Deploy sebagai <strong>Web App</strong> → Anyone can access → Copy URL</li>
           <li>Paste URL di atas dan klik <strong>Simpan</strong></li>
         </ol>

@@ -1,16 +1,27 @@
-import { cars, getBookings } from "@/lib/data";
+import { useEffect, useState } from "react";
+import { cars, fetchBookingsFromSheet, getBookings, type Booking } from "@/lib/data";
 import { FileBarChart, CheckCircle, XCircle, Clock } from "lucide-react";
 
 export default function Report() {
-  const bookings = getBookings();
-  const approved = bookings.filter((b) => b.status === "approved");
-  const rejected = bookings.filter((b) => b.status === "rejected");
-  const pending = bookings.filter((b) => b.status === "pending");
+  const [bookings, setBookings] = useState<Booking[]>(getBookings());
+
+  useEffect(() => {
+    void (async () => {
+      const latestBookings = await fetchBookingsFromSheet();
+      setBookings(latestBookings);
+    })();
+  }, []);
+
+  const approved = bookings.filter((booking) => booking.status === "approved");
+  const rejected = bookings.filter((booking) => booking.status === "rejected");
+  const pending = bookings.filter((booking) => booking.status === "pending");
+
+  const resolveCarName = (booking: Booking) => booking.carName || cars.find((car) => car.id === booking.carId)?.name || "—";
 
   const carUsage = cars.map((car) => ({
     ...car,
-    total: bookings.filter((b) => b.carId === car.id).length,
-    approvedCount: approved.filter((b) => b.carId === car.id).length,
+    total: bookings.filter((booking) => booking.carId === car.id || booking.carName === car.name).length,
+    approvedCount: approved.filter((booking) => booking.carId === car.id || booking.carName === car.name).length,
   }));
 
   return (
@@ -36,21 +47,21 @@ export default function Report() {
             <thead className="bg-muted">
               <tr>
                 <th className="text-left p-3 font-medium text-muted-foreground">Kendaraan</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Plat</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Jenis</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Total Dialokasi</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Disetujui</th>
               </tr>
             </thead>
             <tbody>
-              {carUsage.map((c) => (
-                <tr key={c.id} className="border-t hover:bg-muted/50 transition-colors">
+              {carUsage.map((car) => (
+                <tr key={car.id} className="border-t hover:bg-muted/50 transition-colors">
                   <td className="p-3 font-medium text-card-foreground flex items-center gap-3">
-                    <img src={c.image} alt={c.name} className="w-12 h-8 rounded object-cover" />
-                    {c.name}
+                    <img src={car.image} alt={car.name} className="w-12 h-8 rounded object-cover" loading="lazy" />
+                    {car.name}
                   </td>
-                  <td className="p-3 text-muted-foreground">{c.type}</td>
-                  <td className="p-3 text-muted-foreground">{c.total}</td>
-                  <td className="p-3 text-muted-foreground">{c.approvedCount}</td>
+                  <td className="p-3 text-muted-foreground">{car.type}</td>
+                  <td className="p-3 text-muted-foreground">{car.total}</td>
+                  <td className="p-3 text-muted-foreground">{car.approvedCount}</td>
                 </tr>
               ))}
             </tbody>
@@ -78,27 +89,24 @@ export default function Report() {
               {bookings.length === 0 ? (
                 <tr><td colSpan={6} className="text-center p-8 text-muted-foreground">Belum ada data</td></tr>
               ) : (
-                bookings.map((b) => {
-                  const car = cars.find((c) => c.id === b.carId);
-                  return (
-                    <tr key={b.id} className="border-t hover:bg-muted/50 transition-colors">
-                      <td className="p-3 font-medium text-card-foreground">{b.borrowerName}</td>
-                      <td className="p-3 text-muted-foreground">{b.teamName}</td>
-                      <td className="p-3 text-muted-foreground max-w-[150px] truncate">{b.keperluan}</td>
-                      <td className="p-3 text-muted-foreground">{car?.name ?? "—"}</td>
-                      <td className="p-3 text-muted-foreground">{b.startDate} — {b.endDate}</td>
-                      <td className="p-3">
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                          b.status === "approved" ? "bg-success/10 text-success" :
-                          b.status === "rejected" ? "bg-destructive/10 text-destructive" :
-                          "bg-warning/10 text-warning"
-                        }`}>
-                          {b.status === "approved" ? "Disetujui" : b.status === "rejected" ? "Ditolak" : "Menunggu"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
+                bookings.map((booking) => (
+                  <tr key={booking.id} className="border-t hover:bg-muted/50 transition-colors">
+                    <td className="p-3 font-medium text-card-foreground">{booking.borrowerName}</td>
+                    <td className="p-3 text-muted-foreground">{booking.teamName}</td>
+                    <td className="p-3 text-muted-foreground max-w-[150px] truncate">{booking.keperluan}</td>
+                    <td className="p-3 text-muted-foreground">{resolveCarName(booking)}</td>
+                    <td className="p-3 text-muted-foreground">{booking.startDate} — {booking.endDate}</td>
+                    <td className="p-3">
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        booking.status === "approved" ? "bg-success/10 text-success" :
+                        booking.status === "rejected" ? "bg-destructive/10 text-destructive" :
+                        "bg-warning/10 text-warning"
+                      }`}>
+                        {booking.status === "approved" ? "Disetujui" : booking.status === "rejected" ? "Ditolak" : "Menunggu"}
+                      </span>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
