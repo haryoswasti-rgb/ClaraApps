@@ -48,7 +48,7 @@ export default function Report() {
                     <img src={c.image} alt={c.name} className="w-12 h-8 rounded object-cover" />
                     {c.name}
                   </td>
-                  <td className="p-3 text-muted-foreground">{c.plate}</td>
+                  <td className="p-3 text-muted-foreground">{c.type}</td>
                   <td className="p-3 text-muted-foreground">{c.total}</td>
                   <td className="p-3 text-muted-foreground">{c.approvedCount}</td>
                 </tr>

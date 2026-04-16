@@ -46,8 +46,6 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>{car.plate}</span>
-                    <span>•</span>
                     <span>{car.type}</span>
                     <span>•</span>
                     <span>{car.capacity} kursi</span>

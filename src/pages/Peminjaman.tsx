@@ -263,7 +263,7 @@ export default function Peminjaman() {
             <SelectTrigger><SelectValue placeholder="Pilih mobil" /></SelectTrigger>
             <SelectContent>
               {cars.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name} — {c.plate}</SelectItem>
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -321,7 +321,7 @@ export default function Peminjaman() {
                   <SelectTrigger><SelectValue placeholder="Pilih mobil" /></SelectTrigger>
                   <SelectContent>
                     {cars.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name} — {c.plate}</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
