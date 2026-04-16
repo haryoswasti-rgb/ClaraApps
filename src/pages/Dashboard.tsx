@@ -12,9 +12,9 @@ export default function Dashboard() {
   return (
     <div className="animate-fade-in space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard CLARA</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Informasi ketersediaan mobil dinas BPS Provinsi Tengah
+          Car Log and Reservation Application — Informasi ketersediaan kendaraan dinas
         </p>
       </div>
 

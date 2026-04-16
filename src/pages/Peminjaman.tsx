@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Clock, Car, Pencil } from "lucide-react";
+import AdminPasswordDialog from "@/components/AdminPasswordDialog";
 
 export default function Peminjaman() {
   const { toast } = useToast();
@@ -31,6 +32,21 @@ export default function Peminjaman() {
   const [editApprovalDialog, setEditApprovalDialog] = useState<{ open: boolean; booking: Booking | null }>({ open: false, booking: null });
   const [editApprovalCarId, setEditApprovalCarId] = useState("");
   const [editApprovalStatus, setEditApprovalStatus] = useState<"pending" | "approved" | "rejected">("pending");
+
+  // Admin password protection
+  const [adminAuthDialog, setAdminAuthDialog] = useState(false);
+  const [pendingAdminAction, setPendingAdminAction] = useState<(() => void) | null>(null);
+
+  const requireAdmin = (action: () => void) => {
+    setPendingAdminAction(() => action);
+    setAdminAuthDialog(true);
+  };
+
+  const handleAdminVerified = () => {
+    setAdminAuthDialog(false);
+    pendingAdminAction?.();
+    setPendingAdminAction(null);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,10 +225,10 @@ export default function Peminjaman() {
                           <div className="flex items-center gap-1">
                             {b.status === "pending" && (
                               <>
-                                <Button size="sm" variant="outline" className="text-success border-success/30 hover:bg-success/10" onClick={() => handleApproveClick(b.id)}>
+                                <Button size="sm" variant="outline" className="text-success border-success/30 hover:bg-success/10" onClick={() => requireAdmin(() => handleApproveClick(b.id))}>
                                   <CheckCircle className="w-3.5 h-3.5 mr-1" /> Setujui
                                 </Button>
-                                <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => handleReject(b.id)}>
+                                <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => requireAdmin(() => handleReject(b.id))}>
                                   <XCircle className="w-3.5 h-3.5 mr-1" /> Tolak
                                 </Button>
                               </>
@@ -221,7 +237,7 @@ export default function Peminjaman() {
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
                             {b.status !== "pending" && (
-                              <Button size="sm" variant="ghost" onClick={() => openEditApproval(b)} title="Edit approval">
+                              <Button size="sm" variant="ghost" onClick={() => requireAdmin(() => openEditApproval(b))} title="Edit approval">
                                 <CheckCircle className="w-3.5 h-3.5" />
                               </Button>
                             )}
@@ -318,6 +334,14 @@ export default function Peminjaman() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Admin Password Dialog */}
+      <AdminPasswordDialog
+        open={adminAuthDialog}
+        onOpenChange={(open) => { setAdminAuthDialog(open); if (!open) setPendingAdminAction(null); }}
+        onSuccess={handleAdminVerified}
+        title="Verifikasi Admin"
+      />
     </div>
   );
 }
