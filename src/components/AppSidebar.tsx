@@ -18,8 +18,8 @@ export default function AppSidebar() {
           <Car className="w-5 h-5 text-sidebar-primary" />
         </div>
         <div>
-          <h1 className="text-sm font-bold text-sidebar-accent-foreground leading-tight">BPS Prov. Tengah</h1>
-          <p className="text-xs text-sidebar-muted">Peminjaman Mobil Dinas</p>
+          <h1 className="text-sm font-bold text-sidebar-accent-foreground leading-tight">CLARA</h1>
+          <p className="text-xs text-sidebar-muted">Car Log & Reservation App</p>
         </div>
       </div>
       <nav className="flex-1 p-4 space-y-1">
