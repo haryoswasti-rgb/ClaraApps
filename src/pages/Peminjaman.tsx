@@ -225,10 +225,10 @@ export default function Peminjaman() {
                           <div className="flex items-center gap-1">
                             {b.status === "pending" && (
                               <>
-                                <Button size="sm" variant="outline" className="text-success border-success/30 hover:bg-success/10" onClick={() => handleApproveClick(b.id)}>
+                                <Button size="sm" variant="outline" className="text-success border-success/30 hover:bg-success/10" onClick={() => requireAdmin(() => handleApproveClick(b.id))}>
                                   <CheckCircle className="w-3.5 h-3.5 mr-1" /> Setujui
                                 </Button>
-                                <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => handleReject(b.id)}>
+                                <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => requireAdmin(() => handleReject(b.id))}>
                                   <XCircle className="w-3.5 h-3.5 mr-1" /> Tolak
                                 </Button>
                               </>
@@ -237,7 +237,7 @@ export default function Peminjaman() {
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>
                             {b.status !== "pending" && (
-                              <Button size="sm" variant="ghost" onClick={() => openEditApproval(b)} title="Edit approval">
+                              <Button size="sm" variant="ghost" onClick={() => requireAdmin(() => openEditApproval(b))} title="Edit approval">
                                 <CheckCircle className="w-3.5 h-3.5" />
                               </Button>
                             )}
