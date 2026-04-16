@@ -334,6 +334,14 @@ export default function Peminjaman() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Admin Password Dialog */}
+      <AdminPasswordDialog
+        open={adminAuthDialog}
+        onOpenChange={(open) => { setAdminAuthDialog(open); if (!open) setPendingAdminAction(null); }}
+        onSuccess={handleAdminVerified}
+        title="Verifikasi Admin"
+      />
     </div>
   );
 }
