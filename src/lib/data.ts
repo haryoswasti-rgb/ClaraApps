@@ -6,7 +6,6 @@ import pantherImg from "@/assets/panther.jpg";
 export interface Car {
   id: string;
   name: string;
-  plate: string;
   image: string;
   capacity: number;
   type: string;
@@ -27,11 +26,11 @@ export interface Booking {
 }
 
 export const cars: Car[] = [
-  { id: "innova-1", name: "Toyota Innova 1", plate: "BG 1001 BP", image: innovaImg, capacity: 7, type: "MPV" },
-  { id: "innova-2", name: "Toyota Innova 2", plate: "BG 1002 BP", image: innovaImg, capacity: 7, type: "MPV" },
-  { id: "terios-1", name: "Daihatsu Terios", plate: "BG 1003 BP", image: teriosImg, capacity: 7, type: "SUV" },
-  { id: "xenia-1", name: "Daihatsu Xenia", plate: "BG 1004 BP", image: xeniaImg, capacity: 7, type: "MPV" },
-  { id: "panther-1", name: "Isuzu Panther", plate: "BG 1005 BP", image: pantherImg, capacity: 8, type: "MPV" },
+  { id: "innova-02", name: "Toyota Innova 02", image: innovaImg, capacity: 7, type: "MPV" },
+  { id: "innova-05", name: "Toyota Innova 05", image: innovaImg, capacity: 7, type: "MPV" },
+  { id: "terios-1", name: "Daihatsu Terios", image: teriosImg, capacity: 7, type: "SUV" },
+  { id: "xenia-1", name: "Daihatsu Xenia", image: xeniaImg, capacity: 7, type: "MPV" },
+  { id: "panther-1", name: "Isuzu Panther", image: pantherImg, capacity: 8, type: "MPV" },
 ];
 
 // --- Google Sheets API Integration ---
