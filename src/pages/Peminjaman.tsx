@@ -1,5 +1,13 @@
-import { useState } from "react";
-import { cars, getBookings, saveBooking, updateBookingStatus, updateBooking, type Booking } from "@/lib/data";
+import { useEffect, useState } from "react";
+import {
+  cars,
+  fetchBookingsFromSheet,
+  getBookings,
+  saveBookingToSheet,
+  updateBookingOnSheet,
+  updateBookingStatusOnSheet,
+  type Booking,
+} from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,27 +41,36 @@ export default function Peminjaman() {
   const [editApprovalCarId, setEditApprovalCarId] = useState("");
   const [editApprovalStatus, setEditApprovalStatus] = useState<"pending" | "approved" | "rejected">("pending");
 
-  // Admin password protection
   const [adminAuthDialog, setAdminAuthDialog] = useState(false);
-  const [pendingAdminAction, setPendingAdminAction] = useState<(() => void) | null>(null);
+  const [pendingAdminAction, setPendingAdminAction] = useState<(() => void | Promise<void>) | null>(null);
 
-  const requireAdmin = (action: () => void) => {
+  async function refreshBookings() {
+    const latestBookings = await fetchBookingsFromSheet();
+    setBookings(latestBookings);
+  }
+
+  useEffect(() => {
+    void refreshBookings();
+  }, []);
+
+  const requireAdmin = (action: () => void | Promise<void>) => {
     setPendingAdminAction(() => action);
     setAdminAuthDialog(true);
   };
 
-  const handleAdminVerified = () => {
+  const handleAdminVerified = async () => {
     setAdminAuthDialog(false);
-    pendingAdminAction?.();
+    await pendingAdminAction?.();
     setPendingAdminAction(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.borrowerName || !form.teamName || !form.keperluan || !form.startDate || !form.endDate) {
       toast({ title: "Error", description: "Semua field harus diisi", variant: "destructive" });
       return;
     }
+
     const booking: Booking = {
       id: crypto.randomUUID(),
       ...form,
@@ -61,10 +78,16 @@ export default function Peminjaman() {
       status: "pending",
       createdAt: new Date().toISOString(),
     };
-    saveBooking(booking);
-    setBookings(getBookings());
+
+    const success = await saveBookingToSheet(booking);
+    await refreshBookings();
     setForm({ borrowerName: "", teamName: "", keperluan: "", startDate: "", endDate: "", startTime: "08:00", endTime: "17:00" });
-    toast({ title: "Berhasil", description: "Peminjaman berhasil diajukan" });
+
+    toast(
+      success
+        ? { title: "Berhasil", description: "Peminjaman berhasil diajukan dan tersimpan di spreadsheet" }
+        : { title: "Sinkronisasi gagal", description: "Data hanya tersimpan lokal, cek API URL atau deployment Apps Script", variant: "destructive" }
+    );
   };
 
   const handleApproveClick = (bookingId: string) => {
@@ -72,21 +95,32 @@ export default function Peminjaman() {
     setApprovalDialog({ open: true, bookingId });
   };
 
-  const handleApproveConfirm = () => {
+  const handleApproveConfirm = async () => {
     if (!selectedCarId) {
       toast({ title: "Error", description: "Pilih mobil yang akan dialokasikan", variant: "destructive" });
       return;
     }
-    updateBookingStatus(approvalDialog.bookingId, "approved", selectedCarId);
-    setBookings(getBookings());
+
+    const success = await updateBookingStatusOnSheet(approvalDialog.bookingId, "approved", selectedCarId);
+    await refreshBookings();
     setApprovalDialog({ open: false, bookingId: "" });
-    toast({ title: "Disetujui", description: "Peminjaman telah disetujui dan mobil dialokasikan" });
+
+    toast(
+      success
+        ? { title: "Disetujui", description: "Peminjaman telah disetujui dan diperbarui di spreadsheet" }
+        : { title: "Sinkronisasi gagal", description: "Approval lokal berubah, tetapi spreadsheet gagal diperbarui", variant: "destructive" }
+    );
   };
 
-  const handleReject = (id: string) => {
-    updateBookingStatus(id, "rejected");
-    setBookings(getBookings());
-    toast({ title: "Ditolak", description: "Peminjaman telah ditolak" });
+  const handleReject = async (id: string) => {
+    const success = await updateBookingStatusOnSheet(id, "rejected");
+    await refreshBookings();
+
+    toast(
+      success
+        ? { title: "Ditolak", description: "Peminjaman telah ditolak dan diperbarui di spreadsheet" }
+        : { title: "Sinkronisasi gagal", description: "Penolakan lokal berubah, tetapi spreadsheet gagal diperbarui", variant: "destructive" }
+    );
   };
 
   const openEditForm = (b: Booking) => {
@@ -94,12 +128,18 @@ export default function Peminjaman() {
     setEditDialog({ open: true, booking: b });
   };
 
-  const handleEditFormSave = () => {
+  const handleEditFormSave = async () => {
     if (!editDialog.booking) return;
-    updateBooking(editDialog.booking.id, editForm);
-    setBookings(getBookings());
+
+    const success = await updateBookingOnSheet(editDialog.booking.id, editForm);
+    await refreshBookings();
     setEditDialog({ open: false, booking: null });
-    toast({ title: "Berhasil", description: "Data peminjaman berhasil diperbarui" });
+
+    toast(
+      success
+        ? { title: "Berhasil", description: "Data peminjaman berhasil diperbarui di spreadsheet" }
+        : { title: "Sinkronisasi gagal", description: "Perubahan lokal tersimpan, tetapi spreadsheet gagal diperbarui", variant: "destructive" }
+    );
   };
 
   const openEditApproval = (b: Booking) => {
@@ -108,17 +148,24 @@ export default function Peminjaman() {
     setEditApprovalDialog({ open: true, booking: b });
   };
 
-  const handleEditApprovalSave = () => {
+  const handleEditApprovalSave = async () => {
     if (!editApprovalDialog.booking) return;
     const carId = editApprovalStatus === "approved" ? editApprovalCarId : "";
+
     if (editApprovalStatus === "approved" && !carId) {
       toast({ title: "Error", description: "Pilih mobil yang akan dialokasikan", variant: "destructive" });
       return;
     }
-    updateBooking(editApprovalDialog.booking.id, { status: editApprovalStatus, carId });
-    setBookings(getBookings());
+
+    const success = await updateBookingOnSheet(editApprovalDialog.booking.id, { status: editApprovalStatus, carId });
+    await refreshBookings();
     setEditApprovalDialog({ open: false, booking: null });
-    toast({ title: "Berhasil", description: "Status approval berhasil diperbarui" });
+
+    toast(
+      success
+        ? { title: "Berhasil", description: "Status approval berhasil diperbarui di spreadsheet" }
+        : { title: "Sinkronisasi gagal", description: "Perubahan approval lokal tersimpan, tetapi spreadsheet gagal diperbarui", variant: "destructive" }
+    );
   };
 
   const statusIcon = (s: string) => {
