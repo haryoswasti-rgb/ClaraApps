@@ -42,16 +42,38 @@ function resolveCarName(carId?: string, carName?: string) {
   return carName || cars.find((car) => car.id === carId)?.name || "";
 }
 
+function normalizeTime(value?: string): string {
+  if (!value) return "";
+  if (value.includes("T")) {
+    // Extract HH:mm directly from ISO string to avoid timezone shifts
+    const match = value.match(/T(\d{2}):(\d{2})/);
+    if (match) return `${match[1]}:${match[2]}`;
+  }
+  const match = value.match(/(\d{1,2}):(\d{2})/);
+  if (match) return `${match[1].padStart(2, "0")}:${match[2]}`;
+  return value;
+}
+
+function normalizeDate(value?: string): string {
+  if (!value) return "";
+  if (value.includes("T")) {
+    // Extract YYYY-MM-DD directly from ISO string
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+  return value;
+}
+
 function normalizeBooking(booking: Partial<Booking>): Booking {
   return {
     id: booking.id || "",
     borrowerName: booking.borrowerName || "",
     teamName: booking.teamName || "",
     keperluan: booking.keperluan || "",
-    startDate: booking.startDate || "",
-    endDate: booking.endDate || "",
-    startTime: booking.startTime || "",
-    endTime: booking.endTime || "",
+    startDate: normalizeDate(booking.startDate),
+    endDate: normalizeDate(booking.endDate),
+    startTime: normalizeTime(booking.startTime),
+    endTime: normalizeTime(booking.endTime),
     carId: booking.carId || "",
     carName: resolveCarName(booking.carId, booking.carName),
     status: (booking.status as Booking["status"]) || "pending",
