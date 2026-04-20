@@ -414,6 +414,23 @@ export default function Peminjaman() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hapus Data Peminjaman</DialogTitle>
+            <DialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Data peminjaman atas nama{" "}
+              <span className="font-semibold text-foreground">{deleteDialog.booking?.borrowerName}</span>{" "}
+              akan dihapus permanen dari spreadsheet.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, booking: null })}>Batal</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>Hapus</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AdminPasswordDialog
         open={adminAuthDialog}
         onOpenChange={(open) => { setAdminAuthDialog(open); if (!open) setPendingAdminAction(null); }}
