@@ -187,12 +187,14 @@ export default function Peminjaman() {
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "—";
-    const date = new Date(dateStr);
-    if (!isNaN(date.getTime())) {
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      return `${day}-${month}-${year}`;
+    if (dateStr.includes("T")) {
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        const day = String(date.getUTCDate()).padStart(2, "0");
+        const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+        const year = date.getUTCFullYear();
+        return `${day}-${month}-${year}`;
+      }
     }
     const [year, month, day] = dateStr.split("-");
     return `${day}-${month}-${year}`;
@@ -200,11 +202,13 @@ export default function Peminjaman() {
 
   const formatTime = (timeStr: string) => {
     if (!timeStr) return "—";
-    const date = new Date(timeStr);
-    if (!isNaN(date.getTime()) && timeStr.includes("T")) {
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
-      return `${hours}.${minutes}`;
+    if (timeStr.includes("T")) {
+      const date = new Date(timeStr);
+      if (!isNaN(date.getTime())) {
+        const hours = String(date.getUTCHours()).padStart(2, "0");
+        const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+        return `${hours}.${minutes}`;
+      }
     }
     return timeStr.replace(":", ".");
   };
