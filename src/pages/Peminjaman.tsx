@@ -6,6 +6,7 @@ import {
   saveBookingToSheet,
   updateBookingOnSheet,
   updateBookingStatusOnSheet,
+  deleteBookingOnSheet,
   type Booking,
 } from "@/lib/data";
 import { Button } from "@/components/ui/button";
@@ -13,9 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Clock, Car, Pencil } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Car, Pencil, Trash2 } from "lucide-react";
 import AdminPasswordDialog from "@/components/AdminPasswordDialog";
 
 function formatTime24(value?: string): string {
@@ -51,6 +52,7 @@ export default function Peminjaman() {
 
   const [adminAuthDialog, setAdminAuthDialog] = useState(false);
   const [pendingAdminAction, setPendingAdminAction] = useState<(() => void | Promise<void>) | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; booking: Booking | null }>({ open: false, booking: null });
 
   const resolveCarName = (carId: string, fallback?: string) => fallback || cars.find((car) => car.id === carId)?.name || "";
 
@@ -181,6 +183,19 @@ export default function Peminjaman() {
     );
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.booking) return;
+    const success = await deleteBookingOnSheet(deleteDialog.booking.id);
+    await refreshBookings();
+    setDeleteDialog({ open: false, booking: null });
+
+    toast(
+      success
+        ? { title: "Dihapus", description: "Data peminjaman berhasil dihapus dari spreadsheet" }
+        : { title: "Sinkronisasi gagal", description: "Data lokal terhapus, tetapi spreadsheet gagal diperbarui", variant: "destructive" }
+    );
+  };
+
   const statusIcon = (status: string) => {
     if (status === "approved") return <CheckCircle className="w-4 h-4 text-success" />;
     if (status === "rejected") return <XCircle className="w-4 h-4 text-destructive" />;
@@ -299,6 +314,15 @@ export default function Peminjaman() {
                                 <CheckCircle className="w-3.5 h-3.5" />
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => requireAdmin(() => setDeleteDialog({ open: true, booking }))}
+                              title="Hapus data (admin)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -386,6 +410,23 @@ export default function Peminjaman() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditApprovalDialog({ open: false, booking: null })}>Batal</Button>
             <Button onClick={handleEditApprovalSave}>Simpan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Hapus Data Peminjaman</DialogTitle>
+            <DialogDescription>
+              Tindakan ini tidak dapat dibatalkan. Data peminjaman atas nama{" "}
+              <span className="font-semibold text-foreground">{deleteDialog.booking?.borrowerName}</span>{" "}
+              akan dihapus permanen dari spreadsheet.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, booking: null })}>Batal</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>Hapus</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
