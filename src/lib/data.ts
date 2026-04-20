@@ -132,29 +132,6 @@ export async function updateBookingStatusOnSheet(
   }
 }
 
-export async function deleteBookingOnSheet(id: string): Promise<boolean> {
-  const url = getApiUrl();
-  deleteBookingLocal(id);
-  if (!url) return true;
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain" },
-      body: JSON.stringify({ action: "deleteBooking", data: { id } }),
-    });
-    const result = await res.json();
-    return result.status === "success";
-  } catch {
-    return false;
-  }
-}
-
-function deleteBookingLocal(id: string) {
-  const bookings = getBookingsLocal().filter((booking) => booking.id !== id);
-  localStorage.setItem(BOOKINGS_KEY, JSON.stringify(bookings));
-}
-
 export async function updateBookingOnSheet(id: string, updates: Partial<Booking>): Promise<boolean> {
   const url = getApiUrl();
   const normalizedUpdates: Partial<Booking> = { ...updates };
