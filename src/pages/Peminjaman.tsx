@@ -314,6 +314,15 @@ export default function Peminjaman() {
                                 <CheckCircle className="w-3.5 h-3.5" />
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => requireAdmin(() => setDeleteDialog({ open: true, booking }))}
+                              title="Hapus data (admin)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </td>
                       </tr>
