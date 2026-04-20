@@ -185,6 +185,17 @@ export default function Peminjaman() {
     return "Menunggu";
   };
 
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "—";
+    const [year, month, day] = dateStr.split("-");
+    return `${day}-${month}-${year}`;
+  };
+
+  const formatTime = (timeStr: string) => {
+    if (!timeStr) return "—";
+    return timeStr.replace(":", ".");
+  };
+
   return (
     <div className="animate-fade-in space-y-8">
       <div>
@@ -259,8 +270,8 @@ export default function Peminjaman() {
                         <td className="p-3 font-medium text-card-foreground">{booking.borrowerName}</td>
                         <td className="p-3 text-muted-foreground">{booking.teamName}</td>
                         <td className="p-3 text-muted-foreground max-w-[150px] truncate">{booking.keperluan}</td>
-                        <td className="p-3 text-muted-foreground whitespace-nowrap">{booking.startDate} — {booking.endDate}</td>
-                        <td className="p-3 text-muted-foreground whitespace-nowrap">{booking.startTime} — {booking.endTime}</td>
+                        <td className="p-3 text-muted-foreground whitespace-nowrap">{formatDate(booking.startDate)} — {formatDate(booking.endDate)}</td>
+                        <td className="p-3 text-muted-foreground whitespace-nowrap">{formatTime(booking.startTime)} — {formatTime(booking.endTime)}</td>
                         <td className="p-3 text-muted-foreground">
                           <span className="flex items-center gap-2">
                             <Car className="w-4 h-4" /> {carName}
