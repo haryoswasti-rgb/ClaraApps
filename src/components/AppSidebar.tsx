@@ -1,11 +1,10 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, ClipboardPlus, FileBarChart, Car, Settings } from "lucide-react";
+import { LayoutDashboard, ClipboardPlus, FileBarChart, Car } from "lucide-react";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/peminjaman", label: "Input Peminjaman", icon: ClipboardPlus },
   { to: "/report", label: "Report", icon: FileBarChart },
-  { to: "/settings", label: "Pengaturan API", icon: Settings },
 ];
 
 export default function AppSidebar() {
