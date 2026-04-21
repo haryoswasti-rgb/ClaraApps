@@ -8,6 +8,7 @@ import {
   updateBookingStatusOnSheet,
   type Booking,
 } from "@/lib/data";
+import { isCarAvailableForPeriod } from "@/lib/booking-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,12 +40,20 @@ export default function Peminjaman() {
 
   const [editApprovalDialog, setEditApprovalDialog] = useState<{ open: boolean; booking: Booking | null }>({ open: false, booking: null });
   const [editApprovalCarId, setEditApprovalCarId] = useState("");
-  const [editApprovalStatus, setEditApprovalStatus] = useState<"pending" | "approved" | "rejected">("pending");
+  const [editApprovalStatus, setEditApprovalStatus] = useState<Booking["status"]>("pending");
 
   const [adminAuthDialog, setAdminAuthDialog] = useState(false);
   const [pendingAdminAction, setPendingAdminAction] = useState<(() => void | Promise<void>) | null>(null);
 
   const resolveCarName = (carId: string, fallback?: string) => fallback || cars.find((car) => car.id === carId)?.name || "";
+
+  const isCarAllocatable = (carId: string, booking: Pick<Booking, "id" | "startDate" | "endDate" | "startTime" | "endTime">) => {
+    return isCarAvailableForPeriod(bookings, carId, booking.startDate, booking.endDate, booking.startTime, booking.endTime, booking.id);
+  };
+
+  const getAvailableCars = (booking: Pick<Booking, "id" | "startDate" | "endDate" | "startTime" | "endTime" | "carId">) => {
+    return cars.filter((car) => car.id === booking.carId || isCarAllocatable(car.id, booking));
+  };
 
   async function refreshBookings() {
     const latestBookings = await fetchBookingsFromSheet();
@@ -104,6 +113,14 @@ export default function Peminjaman() {
       return;
     }
 
+    const booking = bookings.find((item) => item.id === approvalDialog.bookingId);
+    if (!booking) return;
+
+    if (!isCarAllocatable(selectedCarId, booking)) {
+      toast({ title: "Mobil tidak tersedia", description: "Mobil masih dalam proses peminjaman dan belum bisa diajukan lagi", variant: "destructive" });
+      return;
+    }
+
     const selectedCarName = resolveCarName(selectedCarId);
     const success = await updateBookingStatusOnSheet(approvalDialog.bookingId, "approved", selectedCarId, selectedCarName);
     await refreshBookings();
@@ -158,6 +175,11 @@ export default function Peminjaman() {
 
     if (editApprovalStatus === "approved" && !carId) {
       toast({ title: "Error", description: "Pilih mobil yang akan dialokasikan", variant: "destructive" });
+      return;
+    }
+
+    if (editApprovalStatus === "approved" && !isCarAllocatable(carId, editApprovalDialog.booking)) {
+      toast({ title: "Mobil tidak tersedia", description: "Mobil masih dalam proses peminjaman dan belum bisa dipakai ulang", variant: "destructive" });
       return;
     }
 
@@ -339,7 +361,7 @@ export default function Peminjaman() {
           <Select value={selectedCarId} onValueChange={setSelectedCarId}>
             <SelectTrigger><SelectValue placeholder="Pilih mobil" /></SelectTrigger>
             <SelectContent>
-              {cars.map((car) => (
+              {getAvailableCars({ ...(bookings.find((item) => item.id === approvalDialog.bookingId) ?? { id: "", startDate: "", endDate: "", startTime: "", endTime: "", carId: "" }) }).map((car) => (
                 <SelectItem key={car.id} value={car.id}>{car.name}</SelectItem>
               ))}
             </SelectContent>
@@ -380,11 +402,12 @@ export default function Peminjaman() {
           <div className="space-y-3">
             <div>
               <Label>Status</Label>
-              <Select value={editApprovalStatus} onValueChange={(value) => setEditApprovalStatus(value as "pending" | "approved" | "rejected")}>
+              <Select value={editApprovalStatus} onValueChange={(value) => setEditApprovalStatus(value as Booking["status"])}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pending">Menunggu</SelectItem>
                   <SelectItem value="approved">Disetujui</SelectItem>
+                  <SelectItem value="returned">Sudah Kembali</SelectItem>
                   <SelectItem value="rejected">Ditolak</SelectItem>
                 </SelectContent>
               </Select>
@@ -395,7 +418,7 @@ export default function Peminjaman() {
                 <Select value={editApprovalCarId} onValueChange={setEditApprovalCarId}>
                   <SelectTrigger><SelectValue placeholder="Pilih mobil" /></SelectTrigger>
                   <SelectContent>
-                    {cars.map((car) => (
+                    {getAvailableCars({ ...editApprovalDialog.booking, carId: editApprovalCarId || editApprovalDialog.booking?.carId || "" } as Booking).map((car) => (
                       <SelectItem key={car.id} value={car.id}>{car.name}</SelectItem>
                     ))}
                   </SelectContent>
