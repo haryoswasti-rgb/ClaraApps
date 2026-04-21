@@ -8,7 +8,6 @@ import Dashboard from "./pages/Dashboard";
 import Peminjaman from "./pages/Peminjaman";
 import ProtectedSettingsPage from "./pages/ProtectedSettingsPage";
 import Report from "./pages/Report";
-import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

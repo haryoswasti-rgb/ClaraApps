@@ -1,22 +1,39 @@
 import { useEffect, useState } from "react";
-import { cars, fetchBookingsFromSheet, getBookings, type Booking } from "@/lib/data";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { cars, fetchBookingsFromSheet, getBookings, updateBookingStatusOnSheet, type Booking } from "@/lib/data";
 import { FileBarChart, CheckCircle, XCircle, Clock } from "lucide-react";
 
 export default function Report() {
+  const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>(getBookings());
 
+  const refreshBookings = async () => {
+    const latestBookings = await fetchBookingsFromSheet();
+    setBookings(latestBookings);
+  };
+
   useEffect(() => {
-    void (async () => {
-      const latestBookings = await fetchBookingsFromSheet();
-      setBookings(latestBookings);
-    })();
+    void refreshBookings();
   }, []);
 
   const approved = bookings.filter((booking) => booking.status === "approved");
   const rejected = bookings.filter((booking) => booking.status === "rejected");
   const pending = bookings.filter((booking) => booking.status === "pending");
+  const returned = bookings.filter((booking) => booking.status === "returned");
 
   const resolveCarName = (booking: Booking) => booking.carName || cars.find((car) => car.id === booking.carId)?.name || "—";
+
+  const handleMarkReturned = async (booking: Booking) => {
+    const success = await updateBookingStatusOnSheet(booking.id, "returned", booking.carId, booking.carName);
+    await refreshBookings();
+
+    toast(
+      success
+        ? { title: "Berhasil", description: `${resolveCarName(booking)} ditandai sudah kembali` }
+        : { title: "Sinkronisasi gagal", description: "Status lokal berubah, tetapi spreadsheet gagal diperbarui", variant: "destructive" }
+    );
+  };
 
   const carUsage = cars.map((car) => ({
     ...car,
@@ -35,7 +52,7 @@ export default function Report() {
         <SummaryCard icon={FileBarChart} label="Total Peminjaman" value={bookings.length} color="bg-primary" />
         <SummaryCard icon={CheckCircle} label="Disetujui" value={approved.length} color="bg-success" />
         <SummaryCard icon={Clock} label="Menunggu" value={pending.length} color="bg-warning" />
-        <SummaryCard icon={XCircle} label="Ditolak" value={rejected.length} color="bg-destructive" />
+        <SummaryCard icon={XCircle} label="Selesai / Ditolak" value={returned.length + rejected.length} color="bg-destructive" />
       </div>
 
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
@@ -83,11 +100,12 @@ export default function Report() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Mobil</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Tanggal</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {bookings.length === 0 ? (
-                <tr><td colSpan={6} className="text-center p-8 text-muted-foreground">Belum ada data</td></tr>
+                <tr><td colSpan={7} className="text-center p-8 text-muted-foreground">Belum ada data</td></tr>
               ) : (
                 bookings.map((booking) => (
                   <tr key={booking.id} className="border-t hover:bg-muted/50 transition-colors">
@@ -99,12 +117,22 @@ export default function Report() {
                     <td className="p-3">
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                         booking.status === "approved" ? "bg-success/10 text-success" :
+                         booking.status === "returned" ? "bg-primary/10 text-primary" :
                         booking.status === "rejected" ? "bg-destructive/10 text-destructive" :
                         "bg-warning/10 text-warning"
                       }`}>
-                        {booking.status === "approved" ? "Disetujui" : booking.status === "rejected" ? "Ditolak" : "Menunggu"}
+                        {booking.status === "approved" ? "Disetujui" : booking.status === "returned" ? "Sudah Kembali" : booking.status === "rejected" ? "Ditolak" : "Menunggu"}
                       </span>
                     </td>
+                     <td className="p-3">
+                       {booking.status === "approved" ? (
+                         <Button size="sm" variant="outline" onClick={() => void handleMarkReturned(booking)}>
+                           Mobil Sudah Kembali
+                         </Button>
+                       ) : (
+                         <span className="text-muted-foreground">—</span>
+                       )}
+                     </td>
                   </tr>
                 ))
               )}
