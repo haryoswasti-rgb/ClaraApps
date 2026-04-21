@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Peminjaman from "./pages/Peminjaman";
+import ProtectedSettingsPage from "./pages/ProtectedSettingsPage";
 import Report from "./pages/Report";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -23,7 +24,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/peminjaman" element={<Peminjaman />} />
             <Route path="/report" element={<Report />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings" element={<ProtectedSettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

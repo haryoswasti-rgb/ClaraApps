@@ -1,5 +1,6 @@
 import { cars, getBookings, isCarAvailable } from "@/lib/data";
 import { Car, CheckCircle, XCircle, ClipboardList } from "lucide-react";
+import { isBookingActiveNow } from "@/lib/booking-utils";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -7,6 +8,7 @@ export default function Dashboard() {
   const bookings = getBookings();
   const totalBookings = bookings.length;
   const pendingBookings = bookings.filter((b) => b.status === "pending").length;
+  const activeBookings = bookings.filter((b) => isBookingActiveNow(b)).length;
   const availableCars = cars.filter((c) => isCarAvailable(c.id, today, today)).length;
 
   return (
@@ -18,9 +20,9 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard icon={Car} label="Total Kendaraan" value={cars.length} color="bg-primary" />
-        <StatCard icon={CheckCircle} label="Tersedia Hari Ini" value={availableCars} color="bg-success" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard icon={ClipboardList} label="Total Peminjaman" value={totalBookings} color="bg-primary" />
+          <StatCard icon={Car} label="Sedang Dipinjam" value={activeBookings} color="bg-destructive" />
         <StatCard icon={ClipboardList} label="Menunggu Persetujuan" value={pendingBookings} color="bg-warning" />
       </div>
 
@@ -35,14 +37,14 @@ export default function Dashboard() {
                 <div className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-card-foreground">{car.name}</h3>
-                    <span
+                     <span
                       className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                        available
+                         available
                           ? "bg-success/10 text-success"
                           : "bg-destructive/10 text-destructive"
                       }`}
                     >
-                      {available ? "Tersedia" : "Dipinjam"}
+                       {available ? "Tersedia" : "Sedang Dipinjam"}
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
