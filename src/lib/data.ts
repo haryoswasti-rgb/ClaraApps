@@ -3,6 +3,7 @@ import innova05Img from "@/assets/innova-05.jpeg";
 import teriosImg from "@/assets/terios.jpeg";
 import xeniaImg from "@/assets/xenia.jpeg";
 import pantherImg from "@/assets/panther.jpeg";
+import { isCarAvailableForPeriod } from "@/lib/booking-utils";
 
 export interface Car {
   id: string;
@@ -23,7 +24,7 @@ export interface Booking {
   endTime: string;
   carId: string;
   carName?: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "returned";
   createdAt: string;
 }
 
@@ -228,10 +229,5 @@ export function updateBooking(id: string, updates: Partial<Booking>) {
 }
 
 export function isCarAvailable(carId: string, startDate: string, endDate: string): boolean {
-  const bookings = getBookingsLocal().filter((booking) => booking.carId === carId && booking.status !== "rejected");
-  return !bookings.some(
-    (booking) =>
-      new Date(startDate) <= new Date(booking.endDate) &&
-      new Date(endDate) >= new Date(booking.startDate)
-  );
+  return isCarAvailableForPeriod(getBookingsLocal(), carId, startDate, endDate);
 }
