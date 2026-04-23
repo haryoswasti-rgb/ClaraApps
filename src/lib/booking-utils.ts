@@ -39,23 +39,19 @@ export function isBookingActiveNow(booking: BookingLike, reference = new Date())
 export function isCarAvailableForPeriod(
   bookings: BookingLike[],
   carId: string,
-  startDate: string,
-  endDate: string,
-  startTime?: string,
-  endTime?: string,
+  _startDate: string,
+  _endDate: string,
+  _startTime?: string,
+  _endTime?: string,
   excludeBookingId?: string
 ) {
-  const requestedStart = toDateTime(startDate, startTime, "00:00");
-  const requestedEnd = toDateTime(endDate, endTime, "23:59");
-
+  // Sebuah mobil dianggap tidak tersedia jika masih ada peminjaman yang
+  // sudah disetujui (approved) dan belum dikembalikan (returned), tanpa
+  // memperhatikan tanggal/jam — sehingga mobil yang belum kembali tidak
+  // dapat dialokasikan untuk peminjaman baru.
   return !bookings.some((booking) => {
     if (booking.id === excludeBookingId) return false;
     if (booking.carId !== carId) return false;
-    if (!isBookingApproved(booking.status)) return false;
-
-    const bookingStart = toDateTime(booking.startDate, booking.startTime, "00:00");
-    const bookingEnd = toDateTime(booking.endDate, booking.endTime, "23:59");
-
-    return requestedStart <= bookingEnd && requestedEnd >= bookingStart;
+    return isBookingApproved(booking.status);
   });
 }
