@@ -1,15 +1,22 @@
-import { cars, getBookings, isCarAvailable } from "@/lib/data";
+import { useEffect, useState } from "react";
+import { cars, fetchBookingsFromSheet, type Booking } from "@/lib/data";
 import { Car, CheckCircle, XCircle, ClipboardList } from "lucide-react";
-import { isBookingActiveNow } from "@/lib/booking-utils";
+import { isBookingApproved } from "@/lib/booking-utils";
 
 const today = new Date().toISOString().split("T")[0];
 
 export default function Dashboard() {
-  const bookings = getBookings();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+
+  useEffect(() => {
+    fetchBookingsFromSheet().then(setBookings);
+  }, []);
+
   const totalBookings = bookings.length;
   const pendingBookings = bookings.filter((b) => b.status === "pending").length;
-  const activeBookings = bookings.filter((b) => isBookingActiveNow(b)).length;
-  const availableCars = cars.filter((c) => isCarAvailable(c.id, today, today)).length;
+  const borrowedCarIds = new Set(bookings.filter((b) => isBookingApproved(b.status)).map((b) => b.carId));
+  const activeBookings = borrowedCarIds.size;
+  const availableCars = cars.filter((car) => !borrowedCarIds.has(car.id)).length;
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -20,9 +27,10 @@ export default function Dashboard() {
         </p>
       </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatCard icon={ClipboardList} label="Total Peminjaman" value={totalBookings} color="bg-primary" />
-          <StatCard icon={Car} label="Sedang Dipinjam" value={activeBookings} color="bg-destructive" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatCard icon={ClipboardList} label="Total Peminjaman" value={totalBookings} color="bg-primary" />
+        <StatCard icon={Car} label="Sedang Dipinjam" value={activeBookings} color="bg-destructive" />
+        <StatCard icon={CheckCircle} label="Kendaraan Tersedia" value={availableCars} color="bg-success" />
         <StatCard icon={ClipboardList} label="Menunggu Persetujuan" value={pendingBookings} color="bg-warning" />
       </div>
 
@@ -30,7 +38,7 @@ export default function Dashboard() {
         <h2 className="text-lg font-semibold text-foreground mb-4">Daftar Kendaraan</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cars.map((car) => {
-            const available = isCarAvailable(car.id, today, today);
+            const available = !borrowedCarIds.has(car.id);
             return (
               <div key={car.id} className="bg-card rounded-xl border overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 <img src={car.image} alt={car.name} className="w-full h-44 object-cover" loading="lazy" />
