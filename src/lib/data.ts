@@ -27,6 +27,8 @@ export interface Booking {
   carName?: string;
   status: "pending" | "approved" | "rejected" | "returned";
   createdAt: string;
+  notaDinas?: string;
+  notaDinasName?: string;
 }
 
 export const cars: Car[] = [
