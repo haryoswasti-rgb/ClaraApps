@@ -31,6 +31,8 @@ export default function Peminjaman() {
     endDate: "",
     startTime: "08:00",
     endTime: "17:00",
+    notaDinas: "",
+    notaDinasName: "",
   });
 
   const [approvalDialog, setApprovalDialog] = useState<{ open: boolean; bookingId: string }>({ open: false, bookingId: "" });
@@ -94,7 +96,7 @@ export default function Peminjaman() {
 
     const success = await saveBookingToSheet(booking);
     await refreshBookings();
-    setForm({ borrowerName: "", teamName: "", anggotaTim: "", keperluan: "", startDate: "", endDate: "", startTime: "08:00", endTime: "17:00" });
+    setForm({ borrowerName: "", teamName: "", anggotaTim: "", keperluan: "", startDate: "", endDate: "", startTime: "08:00", endTime: "17:00", notaDinas: "", notaDinasName: "" });
 
     toast(
       success
@@ -281,6 +283,34 @@ export default function Peminjaman() {
               <Label>Jam Selesai</Label>
               <Input type="time" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Upload Nota Dinas (PDF)</Label>
+            <Input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) {
+                  setForm({ ...form, notaDinas: "", notaDinasName: "" });
+                  return;
+                }
+                if (file.type !== "application/pdf") {
+                  toast({ title: "Format salah", description: "File harus berformat PDF", variant: "destructive" });
+                  return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                  toast({ title: "File terlalu besar", description: "Maksimal 5MB", variant: "destructive" });
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                  setForm({ ...form, notaDinas: String(reader.result || ""), notaDinasName: file.name });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+            {form.notaDinasName && <p className="text-xs text-muted-foreground">Terpilih: {form.notaDinasName}</p>}
           </div>
           <Button type="submit" className="w-full">Ajukan Peminjaman</Button>
         </form>
