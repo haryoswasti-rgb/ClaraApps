@@ -31,6 +31,8 @@ export default function Peminjaman() {
     endDate: "",
     startTime: "08:00",
     endTime: "17:00",
+    notaDinas: "",
+    notaDinasName: "",
   });
 
   const [approvalDialog, setApprovalDialog] = useState<{ open: boolean; bookingId: string }>({ open: false, bookingId: "" });
