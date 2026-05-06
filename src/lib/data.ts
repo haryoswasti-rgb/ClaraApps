@@ -83,6 +83,8 @@ function normalizeBooking(booking: Partial<Booking>): Booking {
     carName: resolveCarName(booking.carId, booking.carName),
     status: (booking.status as Booking["status"]) || "pending",
     createdAt: booking.createdAt || "",
+    notaDinas: booking.notaDinas || "",
+    notaDinasName: booking.notaDinasName || "",
   };
 }
 
