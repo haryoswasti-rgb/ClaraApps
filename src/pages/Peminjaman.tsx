@@ -96,7 +96,7 @@ export default function Peminjaman() {
 
     const success = await saveBookingToSheet(booking);
     await refreshBookings();
-    setForm({ borrowerName: "", teamName: "", anggotaTim: "", keperluan: "", startDate: "", endDate: "", startTime: "08:00", endTime: "17:00" });
+    setForm({ borrowerName: "", teamName: "", anggotaTim: "", keperluan: "", startDate: "", endDate: "", startTime: "08:00", endTime: "17:00", notaDinas: "", notaDinasName: "" });
 
     toast(
       success
